@@ -17,17 +17,18 @@
 
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
     <script>
-      const socket = io("http://192.168.111.62:80"); // Connect to your backend server
+      const socket = io(`http://${location.host}`);
+      document
+        .getElementById("subscribeButton")
+        .addEventListener("click", () => {
+          const roomInput = document.getElementById("roomInput");
+          const room = roomInput.value.trim();
 
-      document.getElementById("subscribeButton").addEventListener("click", () => {
-        const roomInput = document.getElementById("roomInput");
-        const room = roomInput.value.trim();
-
-        if (room) {
-          socket.emit("subscribed", room);
-          roomInput.value = "";
-        }
-      });
+          if (room) {
+            socket.emit("subscribed", room);
+            roomInput.value = "";
+          }
+        });
 
       document.getElementById("sendButton").addEventListener("click", () => {
         const messageInput = document.getElementById("messageInput");
@@ -43,9 +44,9 @@
       socket.on("message", (data) => {
         console.log(data);
         const messagesList = document.getElementById("messages");
-        const li = document.createElement("li");
-        li.innerHTML = data;
-        messagesList.appendChild(li);
+        const p = document.createElement("p");
+        p.innerHTML = data;
+        messagesList.appendChild(p);
       });
     </script>
   </body>
