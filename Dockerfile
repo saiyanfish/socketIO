@@ -1,6 +1,6 @@
 FROM node
 
-WORKDIR /app
+WORKDIR /app/io
 
 COPY package.json .
 
@@ -11,8 +11,6 @@ RUN npm install -g typescript
 COPY . .
 
 RUN tsc
-
-COPY dist .
 
 EXPOSE 8888
 
