@@ -1,8 +1,9 @@
 import User from "../model/account";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import catchAsync from "../error/catchAsync";
 import AppError from "../error/appError";
+import CustomRequest from "../utils/userInterface";
 
 function createAndSendToken(res: Response, user: any, statusCode: number) {
   const uid = user._id;
@@ -10,9 +11,7 @@ function createAndSendToken(res: Response, user: any, statusCode: number) {
     expiresIn: process.env.JWT_EXPIRES_IN || "",
   });
   const cookieOptions = {
-    expires: new Date(
-      Date.now() + parseInt(process.env.JWT_COOKIE_EXPIRES_IN!) * 24 * 60 * 60 * 1000
-    ),
+    expires: new Date(Date.now() + parseInt(process.env.JWT_COOKIE_EXPIRES_IN!) * 24 * 60 * 60 * 1000),
     httpOnly: true,
   };
   res.cookie("jwt", token, cookieOptions);
@@ -41,7 +40,6 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 
 const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
-  console.log(email);
   if (!email || !password) {
     return next(new AppError("plz enter the correct account and password", 404));
   }
@@ -49,10 +47,19 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
   if (!user) {
     return next(new AppError("no this account", 404));
   }
-  if (!(await user.checkPassword(password, user.password))) {
+  if (!user.checkPassword(password, user.password)) {
     return next(new AppError("no this ", 404));
   }
   createAndSendToken(res, user, 200);
 });
 
-export { createUser, login };
+const isLogin = catchAsync(async (req: CustomRequest, res: Response, next: NextFunction) => {
+  const token = req.cookies.jwt;
+  if (!token) return next(new AppError("piz login", 401));
+  const jwtDecode = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+  let user = await User.findById(jwtDecode.id);
+  req.user = user;
+  next();
+});
+
+export { createUser, login, isLogin };

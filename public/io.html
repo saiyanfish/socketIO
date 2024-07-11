@@ -6,29 +6,29 @@
     <title>Socket.IO Frontend</title>
   </head>
   <body>
-    <h1>Socket.IO Frontend</h1>
+    <h1>Socket</h1>
 
     <input type="text" id="roomInput" placeholder="Room name..." />
     <input type="text" id="messageInput" placeholder="Type a message..." />
     <button id="subscribeButton">Subscribe</button>
     <button id="sendButton">Send</button>
+    <input type="file" id="fileInput" />
+    <button onclick="sendImage()">Send Image</button>
 
     <ul id="messages"></ul>
 
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
     <script>
       const socket = io(`http://${location.host}`);
-      document
-        .getElementById("subscribeButton")
-        .addEventListener("click", () => {
-          const roomInput = document.getElementById("roomInput");
-          const room = roomInput.value.trim();
+      document.getElementById("subscribeButton").addEventListener("click", () => {
+        const roomInput = document.getElementById("roomInput");
+        const room = roomInput.value.trim();
 
-          if (room) {
-            socket.emit("subscribed", room);
-            roomInput.value = "";
-          }
-        });
+        if (room) {
+          socket.emit("subscribed", room);
+          roomInput.value = "";
+        }
+      });
 
       document.getElementById("sendButton").addEventListener("click", () => {
         const messageInput = document.getElementById("messageInput");
@@ -48,6 +48,78 @@
         p.innerHTML = data;
         messagesList.appendChild(p);
       });
+      socket.on("image", (data) => {
+        const messagesList = document.getElementById("messages");
+        const arrayBufferView = new Uint8Array(data.image);
+        const blob = new Blob([arrayBufferView], { type: data.type });
+        const urlCreator = window.URL || window.webkitURL;
+        const imageUrl = urlCreator.createObjectURL(blob);
+        let p = document.createElement("img");
+        p.width = 300;
+        p.height = 300;
+        let div = document.createElement("div");
+        p.src = imageUrl;
+        div.appendChild(p);
+        messagesList.appendChild(div);
+      });
+      function sendImage() {
+        const fileInput = document.getElementById("fileInput");
+        if (fileInput.files.length === 0) {
+          alert("Please select a file");
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        const room = document.getElementById("roomInput").value.trim();
+
+        reader.onload = (event) => {
+          // const img = new Image();
+          // img.src = event.target.result;
+          let arrayBuffer = event.target.result;
+          // img.onload = () => {
+          //   const canvas = document.createElement("canvas");
+          //   const ctx = canvas.getContext("2d");
+
+          //   const maxWidth = 500;
+          //   const maxHeight = 500;
+          //   let width = img.width;
+          //   let height = img.height;
+
+          //   if (width > height) {
+          //     if (width > maxWidth) {
+          //       height *= maxWidth / width;
+          //       width = maxWidth;
+          //     }
+          //   } else {
+          //     if (height > maxHeight) {
+          //       width *= maxHeight / height;
+          //       height = maxHeight;
+          //     }
+          //   }
+
+          //   canvas.width = width;
+          //   canvas.height = height;
+          //   ctx.drawImage(img, 0, 0, width, height);
+
+          //   canvas.toBlob((blob) => {
+          //     const reader = new FileReader();
+          //     reader.onload = () => {
+          //       const arrayBuffer = reader.result;
+          //       const type = file.type;
+          //       socket.emit("sendImage", { room: room, image: arrayBuffer, type: type });
+          //       console.log("Image sent to room:", room);
+          //     };
+          //     reader.readAsArrayBuffer(blob);
+          //   }, file.type);
+          // };
+          socket.emit("sendImage", { room: room, image: arrayBuffer, type: file.type });
+        };
+
+        // reader.readAsDataURL(file);
+        reader.readAsArrayBuffer(file);
+        document.getElementById("fileInput").value = "";
+      }
     </script>
   </body>
 </html>

@@ -5,6 +5,7 @@ interface IMessage {
   room: Schema.Types.ObjectId;
   createTime: Date;
   message: string;
+  read: boolean;
 }
 
 type MessageModel = Model<IMessage>;
@@ -27,6 +28,10 @@ const MessageSchema = new Schema<IMessage, MessageModel, {}>({
   },
   message: {
     type: String,
+  },
+  read: {
+    type: Boolean,
+    default: false,
   },
 });
 

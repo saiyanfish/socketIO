@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -54,20 +45,20 @@ exports.uploadFile = upload.fields([
         maxCount: 3,
     },
 ]);
-const reszieImages = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const reszieImages = async (req, res, next) => {
     if (!req.files.images)
         return next();
     req.body.images = ["1", "2", "3"];
-    Promise.all(req.files.images.map((file, i) => __awaiter(void 0, void 0, void 0, function* () {
+    Promise.all(req.files.images.map(async (file, i) => {
         (0, sharp_1.default)(file.buffer)
             .resize(2000, 1333)
             .toFormat("jpeg")
             .jpeg({ quality: 100 })
             .toFile(`./image/${file.filename}`);
         req.body.images.push(file.filename);
-    })));
+    }));
     next();
-});
+};
 exports.reszieImages = reszieImages;
-const updateMongo = () => __awaiter(void 0, void 0, void 0, function* () { });
+const updateMongo = async () => { };
 exports.updateMongo = updateMongo;

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { createSingleChatRoom, findRoom } from "../controller/roomController";
-
+import { createSingleChatRoom, findUserRooms } from "../controller/roomController";
+import { isLogin } from "../controller/userController";
 const roomRouter = Router();
 
-roomRouter.post("/add", createSingleChatRoom).post("/getRoom", findRoom);
+roomRouter.post("/add", createSingleChatRoom).get("/rooms", isLogin, findUserRooms);
 export default roomRouter;

@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import authRouter from "./router/router";
 import roomRouter from "./router/roomRouter";
+import msgRouter from "./router/messageRouter";
 import { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 app.use("/user", authRouter);
 app.use("/room", roomRouter);
+app.use("/msg", msgRouter);
 
 // mongo Connect
 const db = process.env.DATABASE?.replace("<PASSWORD>", process.env.DATABASE_PASSWORD || "");
@@ -52,8 +54,12 @@ io.on("connection", (socket) => {
     console.log("Message received:", data);
     io.to(data.room).emit("message", data.message);
   });
-  socket.on("disconnect", (data) => {
-    console.log(data);
+  socket.on("sendImage", (data) => {
+    console.log("image get");
+    io.to(data.room).emit("image", { image: data.image, type: data.type });
+  });
+  socket.on("disconnect", () => {
+    console.log("bye");
   });
 });
 
