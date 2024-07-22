@@ -5,51 +5,119 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Socket.IO Frontend</title>
   </head>
+  <link rel="stylesheet" href="./css/io.css" />
   <body>
     <h1>Socket</h1>
 
-    <input type="text" id="roomInput" placeholder="Room name..." />
-    <input type="text" id="messageInput" placeholder="Type a message..." />
-    <button id="subscribeButton">Subscribe</button>
-    <button id="sendButton">Send</button>
-    <input type="file" id="fileInput" />
-    <button onclick="sendImage()">Send Image</button>
+    <div class="container">
+      <div class="input-group">
+        <input type="text" id="roomInput" placeholder="Friend's id..." />
+        <button id="subscribeButton">Add</button>
+      </div>
+      <div class="input-group">
+        <input type="text" id="messageInput" placeholder="Type a message..." />
+        <button id="sendButton">Send</button>
+      </div>
+      <div class="input-group">
+        <input type="file" id="fileInput" />
+        <button onclick="sendImage()">Send Image</button>
+      </div>
+    </div>
 
-    <ul id="messages"></ul>
+    <div class="dropdown">
+      <ul class="dropdown-list" id="dropdown-menu"></ul>
+    </div>
+
+    <div id="messages"></div>
 
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-      const socket = io(`http://${location.host}`);
-      document.getElementById("subscribeButton").addEventListener("click", () => {
-        const roomInput = document.getElementById("roomInput");
-        const room = roomInput.value.trim();
+      let now = "";
+      let user = "";
+      let name = "";
+      async function getRooms() {
+        try {
+          const rooms = await axios.get("/room/rooms");
 
-        if (room) {
-          socket.emit("subscribed", room);
-          roomInput.value = "";
+          const list = rooms.data.rooms;
+          user = rooms.data.user;
+          name = rooms.data.name;
+          const dropdownMenu = document.getElementById("dropdown-menu");
+
+          // Clear existing options
+          dropdownMenu.innerHTML = "";
+          const div = document.getElementById("messages");
+
+          // Add new options
+          list.forEach((option) => {
+            const listItem = document.createElement("p");
+            listItem.textContent = option.friend.name; // Adjust according to your data structure
+            listItem.setAttribute("data-value", option.room); // Store the value in a data attribute
+            socket.emit("subscribed", option.room);
+            const messages = document.createElement("ul");
+            messages.id = option.room;
+            messages.classList.add("room-messages"); // Add a class for easier selection
+            messages.style.display = "none";
+            listItem.addEventListener("click", function () {
+              const allMessages = document.querySelectorAll(".room-messages");
+              allMessages.forEach((ul) => {
+                ul.style.display = "none";
+              });
+              messages.style.display = "block";
+              now = this.getAttribute("data-value");
+            });
+
+            dropdownMenu.appendChild(listItem);
+            div.append(messages);
+          });
+        } catch (e) {
+          alert(" login fist");
+          window.location.href = `http://${location.host}/login`;
+        }
+      }
+      const socket = io(`http://${location.host}`);
+      getRooms();
+      document.getElementById("subscribeButton").addEventListener("click", async () => {
+        const roomInput = document.getElementById("roomInput");
+        const newfriend = roomInput.value.trim();
+        try {
+          let room = await axios.post("/room/add", { newfriend });
+          alert("add success");
+          window.location.href = `http://${location.host}`;
+        } catch (e) {
+          console.log(e);
+          alert("查無此人");
         }
       });
 
       document.getElementById("sendButton").addEventListener("click", () => {
         const messageInput = document.getElementById("messageInput");
         const message = messageInput.value.trim();
-        const room = document.getElementById("roomInput").value.trim();
 
-        if (message && room) {
-          socket.emit("message", { room: room, message: message });
+        if (message && now) {
+          const messagesList = document.getElementById(now);
+          const p = document.createElement("p");
+          p.innerHTML = `me : ${messageInput.value}`;
+          messagesList.appendChild(p);
+          socket.emit("message", { room: now, message: message, user, name });
           messageInput.value = "";
         }
       });
 
       socket.on("message", (data) => {
         console.log(data);
-        const messagesList = document.getElementById("messages");
+        if (user === data.user) {
+          return;
+        }
+        console.log(data);
+        const messagesList = document.getElementById(now);
         const p = document.createElement("p");
-        p.innerHTML = data;
+        p.innerHTML = `${data.name} : ${data.message}`;
         messagesList.appendChild(p);
       });
       socket.on("image", (data) => {
-        const messagesList = document.getElementById("messages");
+        const messagesList = document.getElementById(now);
         const arrayBufferView = new Uint8Array(data.image);
         const blob = new Blob([arrayBufferView], { type: data.type });
         const urlCreator = window.URL || window.webkitURL;
@@ -71,49 +139,11 @@
 
         const file = fileInput.files[0];
         const reader = new FileReader();
-        const room = document.getElementById("roomInput").value.trim();
 
         reader.onload = (event) => {
-          // const img = new Image();
-          // img.src = event.target.result;
           let arrayBuffer = event.target.result;
-          // img.onload = () => {
-          //   const canvas = document.createElement("canvas");
-          //   const ctx = canvas.getContext("2d");
 
-          //   const maxWidth = 500;
-          //   const maxHeight = 500;
-          //   let width = img.width;
-          //   let height = img.height;
-
-          //   if (width > height) {
-          //     if (width > maxWidth) {
-          //       height *= maxWidth / width;
-          //       width = maxWidth;
-          //     }
-          //   } else {
-          //     if (height > maxHeight) {
-          //       width *= maxHeight / height;
-          //       height = maxHeight;
-          //     }
-          //   }
-
-          //   canvas.width = width;
-          //   canvas.height = height;
-          //   ctx.drawImage(img, 0, 0, width, height);
-
-          //   canvas.toBlob((blob) => {
-          //     const reader = new FileReader();
-          //     reader.onload = () => {
-          //       const arrayBuffer = reader.result;
-          //       const type = file.type;
-          //       socket.emit("sendImage", { room: room, image: arrayBuffer, type: type });
-          //       console.log("Image sent to room:", room);
-          //     };
-          //     reader.readAsArrayBuffer(blob);
-          //   }, file.type);
-          // };
-          socket.emit("sendImage", { room: room, image: arrayBuffer, type: file.type });
+          socket.emit("sendImage", { room: now, image: arrayBuffer, type: file.type });
         };
 
         // reader.readAsDataURL(file);

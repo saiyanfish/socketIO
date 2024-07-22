@@ -1,6 +1,14 @@
 services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend
   backend:
-    build: .
+    image: raygun3491/io
     ports:
       - "8888:8888"
     volumes:

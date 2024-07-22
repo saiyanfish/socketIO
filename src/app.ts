@@ -27,7 +27,12 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "io.html"));
 });
-
+app.get("/sign", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "signup.html"));
+});
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "login.html"));
+});
 app.use("/user", authRouter);
 app.use("/room", roomRouter);
 app.use("/msg", msgRouter);
@@ -48,14 +53,13 @@ connectToDatabase();
 io.on("connection", (socket) => {
   socket.on("subscribed", (room) => {
     socket.join(room);
-    console.log(`a new user join room ${room}`);
   });
   socket.on("message", (data) => {
-    console.log("Message received:", data);
-    io.to(data.room).emit("message", data.message);
+    // console.log("Message received:", data);
+    io.to(data.room).emit("message", data);
   });
   socket.on("sendImage", (data) => {
-    console.log("image get");
+    // console.log("image get");
     io.to(data.room).emit("image", { image: data.image, type: data.type });
   });
   socket.on("disconnect", () => {
